@@ -1,9 +1,5 @@
 /target/
- 
-*.png
-*.jpg
-*.jpeg
- 
+
 .env
 .env.local
  
