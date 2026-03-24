@@ -1,0 +1,15 @@
+/target/
+ 
+*.png
+*.jpg
+*.jpeg
+ 
+.env
+.env.local
+ 
+.idea/
+*.iml
+
+.DS_Store
+Thumbs.db
+ 
