@@ -50,7 +50,8 @@ curl -X POST "$BASE_URL/image/generate/single" \
       "gain": 0.4,
       "lacunarity": 1.9,
       "seed": 99,
-      "sharp": true
+      "sharp": true,
+      "curl": false
     },
     "colored": true
   }' \
@@ -69,7 +70,7 @@ curl -X POST "$BASE_URL/image/generate/blended" \
   -d '{
     "layers": [
       {
-        "noise": { "type": "perlin", "octaves": 4, "gain": 0.5, "lacunarity": 2.0, "seed": 99, "sharp": false },
+        "noise": { "type": "perlin", "octaves": 4, "gain": 0.5, "lacunarity": 2.0, "seed": 99, "sharp": false, "curl": false },
         "weight": 40.0
       },
       {
@@ -91,16 +92,17 @@ curl -X POST "$BASE_URL/image/generate/blended" \
 
 Classic Perlin noise. Smooth gradient-based noise with good isotropy. Supports `sharp` mode which applies `fract(noise * 6.0)` — creating tight contour lines like light refracting through liquid.
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `octaves` | `u32` | Number of noise layers stacked. More octaves = more detail. 2–4 recommended for liquid look. |
-| `gain` | `f32` | Amplitude multiplier per octave. `0.5` is standard. Higher (0.6–0.7) = more mid-frequency detail, muddier. Lower (0.3–0.4) = dominant base wave, bigger blobs. |
-| `lacunarity` | `f32` | Frequency multiplier per octave. `2.0` doubles frequency each octave. Lower (1.5–1.8) = bigger, slower features. |
-| `seed` | `i32` | Random seed. Different seeds produce different spatial layouts of the same noise pattern. |
-| `sharp` | `bool` | **Required.** Applies `fract(noise * 6.0)` to the output — produces repeating contour bands. Best used on one layer only in blended mode; multiple sharp layers cause interference artifacts. |
+| Parameter    | Type | Description                                                                                                                                                                     |
+|--------------|------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `octaves`    | `u32` | Number of noise layers stacked. More octaves = more detail. 2–4 recommended for liquid look.                                                                                    |
+| `gain`       | `f32` | Amplitude multiplier per octave. `0.5` is standard. Higher (0.6–0.7) = more mid-frequency detail, muddier. Lower (0.3–0.4) = dominant base wave, bigger blobs.                  |
+| `lacunarity` | `f32` | Frequency multiplier per octave. `2.0` doubles frequency each octave. Lower (1.5–1.8) = bigger, slower features.                                                                |
+| `seed`       | `i32` | Random seed. Different seeds produce different spatial layouts of the same noise pattern.                                                                                       |
+| `sharp`      | `bool` | Applies `fract(noise * 4.0)` to the output — produces repeating contour bands. Best used on one layer only in blended mode; multiple sharp layers cause interference artifacts. |
+| `curl`       | `bool` | Applies 3 layered curl noise to warp the Perlin field before sampling.                                                                                                          |
 
 ```json
-{ "type": "perlin", "octaves": 2, "gain": 0.4, "lacunarity": 1.8, "seed": 99, "sharp": false }
+{ "type": "perlin", "octaves": 2, "gain": 0.4, "lacunarity": 1.8, "seed": 99, "sharp": false, "curl": false }
 ```
 
 ---

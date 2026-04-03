@@ -15,6 +15,7 @@ pub enum NoiseConfigDto {
         lacunarity: f32,
         seed: i32,
         sharp: bool,
+        curl: bool,
     },
     OpenSimplex {
         seed: i32,
@@ -45,12 +46,14 @@ impl From<NoiseConfigDto> for NoiseConfig {
                 lacunarity,
                 seed,
                 sharp,
+                curl,
             } => NoiseConfig::Perlin {
                 octaves,
                 gain,
                 lacunarity,
                 seed,
                 sharp,
+                curl,
             },
             NoiseConfigDto::OpenSimplex { seed } => NoiseConfig::OpenSimplex { seed },
             NoiseConfigDto::CellDistance { jitter } => NoiseConfig::CellDistance { jitter },

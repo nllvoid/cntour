@@ -1,7 +1,7 @@
 use image::{GrayImage, Luma};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use rand::{rng, Rng, SeedableRng};
 use rand::prelude::SmallRng;
+use rand::{Rng, SeedableRng};
 
 pub fn blend_noises(layers: &[(&[u8], f32)]) -> Vec<u8> {
     assert!(!layers.is_empty(), "Need at least one layer");
