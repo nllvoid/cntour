@@ -1,122 +1,21 @@
 use actix_web::{web, HttpResponse};
-use image::ImageFormat;
-use serde::Deserialize;
-use std::io::Cursor;
 
-use crate::image_processing::generation::{NoiseConfig, HEIGHT, WIDTH};
-use crate::image_processing::util::BlendType;
+use crate::image_processing::values::{BlendedRequest, SingleRequest, HEIGHT, WIDTH};
 use crate::image_processing::{color, generation, util};
-
-#[derive(Deserialize, Clone, Debug)]
-#[serde(tag = "type", rename_all = "snake_case")]
-pub enum NoiseConfigDto {
-    Perlin {
-        octaves: u32,
-        gain: f32,
-        lacunarity: f32,
-        seed: i32,
-        sharp: bool,
-        curl: bool,
-    },
-    OpenSimplex {
-        seed: i32,
-    },
-    CellDistance {
-        jitter: f32,
-    },
-    ValueCubic {
-        octaves: u32,
-        gain: f32,
-        lacunarity: f32,
-        seed: i32,
-    },
-    Simplex {
-        octaves: u32,
-        gain: f32,
-        lacunarity: f32,
-        seed: i32,
-    },
-}
-
-impl From<NoiseConfigDto> for NoiseConfig {
-    fn from(dto: NoiseConfigDto) -> Self {
-        match dto {
-            NoiseConfigDto::Perlin {
-                octaves,
-                gain,
-                lacunarity,
-                seed,
-                sharp,
-                curl,
-            } => NoiseConfig::Perlin {
-                octaves,
-                gain,
-                lacunarity,
-                seed,
-                sharp,
-                curl,
-            },
-            NoiseConfigDto::OpenSimplex { seed } => NoiseConfig::OpenSimplex { seed },
-            NoiseConfigDto::CellDistance { jitter } => NoiseConfig::CellDistance { jitter },
-            NoiseConfigDto::ValueCubic {
-                octaves,
-                gain,
-                lacunarity,
-                seed,
-            } => NoiseConfig::ValueCubic {
-                octaves,
-                gain,
-                lacunarity,
-                seed,
-            },
-            NoiseConfigDto::Simplex {
-                octaves,
-                gain,
-                lacunarity,
-                seed,
-            } => NoiseConfig::Simplex {
-                octaves,
-                gain,
-                lacunarity,
-                seed,
-            },
-        }
-    }
-}
-
-#[derive(Deserialize, Debug)]
-pub struct SingleRequest {
-    pub noise: NoiseConfigDto,
-    pub colored: Option<bool>,
-}
-
-#[derive(Deserialize, Clone, Debug)]
-pub struct BlendLayer {
-    pub noise: NoiseConfigDto,
-    pub weight: f32,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct BlendedRequest {
-    pub layers: Vec<BlendLayer>,
-    pub colored: Option<bool>,
-    pub blend_type: BlendType,
-}
-
-fn encode_png(img: image::DynamicImage) -> Vec<u8> {
-    let mut buf = Cursor::new(Vec::new());
-    img.write_to(&mut buf, ImageFormat::Png).unwrap();
-    buf.into_inner()
-}
-
-fn render(grayscale: &[u8], colored: bool) -> Vec<u8> {
-    let w = generation::WIDTH as u32;
-    let h = generation::HEIGHT as u32;
-    if colored {
-        let img = color::grayscale_to_rgb_image(grayscale, w, h);
+use crate::image_processing::util::encode_png;
+use crate::image_processing::blend::blend_noises;
+use crate::image_processing::color::generate_random_palette;
+use crate::image_processing::palettes::get_palette;
+fn render(grayscale: &[u8], colored: String) -> Vec<u8> {
+    if colored != "grayscale".to_string() {
+        let palette: Option<Vec<[u8; 3]>> = match colored.as_str() {
+            "random"              => generate_random_palette(6).into(),
+            name                  => Some(get_palette(&colored)),
+        };
+        let img = color::grayscale_to_rgb_image(grayscale, WIDTH as u32, HEIGHT as u32, palette.expect("!"));
         encode_png(image::DynamicImage::ImageRgb8(img))
     } else {
-        let img = util::grayscale_array_to_image(grayscale, w, h);
+        let img = util::grayscale_array_to_image(grayscale, WIDTH as u32, HEIGHT as u32);
         encode_png(image::DynamicImage::ImageLuma8(img))
     }
 }
@@ -128,7 +27,7 @@ pub async fn generate_single(body: web::Json<SingleRequest>) -> HttpResponse {
     log::info!("  colored: {:?}", body.colored);
 
     let grayscale = generation::fill_with_noise(body.noise.into());
-    let colored = body.colored.unwrap_or(false);
+    let colored = body.colored.unwrap_or("random".to_string());
     let png = render(&grayscale, colored);
 
     log::info!("done, png {} bytes", png.len());
@@ -163,8 +62,8 @@ pub async fn generate_blended(body: web::Json<BlendedRequest>) -> HttpResponse {
         .map(|(v, &w)| (v.as_slice(), w))
         .collect();
 
-    let grayscale = util::blend_noises(&pairs, body.blend_type, WIDTH.into(), HEIGHT.into());
-    let colored = body.colored.unwrap_or(false);
+    let grayscale = blend_noises(&pairs, body.blend_type, WIDTH.into(), HEIGHT.into());
+    let colored = body.colored.unwrap_or("random".to_string());
     let png = render(&grayscale, colored);
 
     log::info!("  ✓ done, png {} bytes", png.len());

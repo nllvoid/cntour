@@ -3,41 +3,10 @@ use noise_functions::{
     CellDistanceSq, Noise, OpenSimplex2s, OpenSimplexNoise, Perlin, Simplex, ValueCubic,
 };
 use rayon::prelude::*;
+pub(crate) use crate::image_processing::values::{NoiseConfig, HEIGHT, WIDTH};
 
-pub(crate) const HEIGHT: u16 = 2500;
-pub(crate) const WIDTH: u16 = 2500;
 const SCALE: f32 = 0.001;
 const CURL_MULTIPLIERS: [f32; 3] = [500.0, 300.0, 200.0];
-
-#[derive(Debug)]
-pub enum NoiseConfig {
-    Perlin {
-        octaves: u32,
-        gain: f32,
-        lacunarity: f32,
-        seed: i32,
-        sharp: bool,
-        curl: bool,
-    },
-    OpenSimplex {
-        seed: i32,
-    },
-    CellDistance {
-        jitter: f32,
-    },
-    ValueCubic {
-        octaves: u32,
-        gain: f32,
-        lacunarity: f32,
-        seed: i32,
-    },
-    Simplex {
-        octaves: u32,
-        gain: f32,
-        lacunarity: f32,
-        seed: i32,
-    },
-}
 
 pub fn fill_with_noise(config: NoiseConfig) -> Vec<u8> {
     let resolved_seed = match &config {
