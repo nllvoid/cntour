@@ -40,10 +40,16 @@ async fn main() -> std::io::Result<()> {
             .wrap(cors)
             .wrap(Logger::default())
             .route("/images/health", web::get().to(health))
-            .route("/image/generate/single", web::post().to(api::generate_single))
-            .route("/image/generate/blended", web::post().to(api::generate_blended))
+            .route(
+                "/image/generate/single",
+                web::post().to(api::generate_single),
+            )
+            .route(
+                "/image/generate/blended",
+                web::post().to(api::generate_blended),
+            )
     })
-        .bind(&address)?
-        .run()
-        .await
+    .bind(&address)?
+    .run()
+    .await
 }

@@ -48,11 +48,21 @@ pub fn fill_with_noise(config: NoiseConfig) -> Vec<u8> {
         NoiseConfig::CellDistance { .. } => 0,
     };
 
-    let perlin_samplers = if let NoiseConfig::Perlin { octaves, gain, lacunarity, .. } = &config {
+    let perlin_samplers = if let NoiseConfig::Perlin {
+        octaves,
+        gain,
+        lacunarity,
+        ..
+    } = &config
+    {
         Some((
             Perlin.fbm(*octaves, *gain, *lacunarity).seed(resolved_seed),
-            Perlin.fbm(*octaves, *gain, *lacunarity).seed(resolved_seed + 1),
-            Perlin.fbm(*octaves, *gain, *lacunarity).seed(resolved_seed + 2),
+            Perlin
+                .fbm(*octaves, *gain, *lacunarity)
+                .seed(resolved_seed + 1),
+            Perlin
+                .fbm(*octaves, *gain, *lacunarity)
+                .seed(resolved_seed + 2),
         ))
     } else {
         None
@@ -112,7 +122,8 @@ pub fn fill_with_noise(config: NoiseConfig) -> Vec<u8> {
                         (p0.sample2([
                             (x + vx3 * CURL_MULTIPLIERS[2]) * SCALE,
                             (y + vy3 * CURL_MULTIPLIERS[2]) * SCALE,
-                        ]) * 4.0).fract()
+                        ]) * 4.0)
+                            .fract()
                     } else {
                         sample
                     }
@@ -127,11 +138,21 @@ pub fn fill_with_noise(config: NoiseConfig) -> Vec<u8> {
                 NoiseConfig::CellDistance { jitter } => CellDistanceSq::default()
                     .jitter(*jitter)
                     .sample2([x * SCALE, y * SCALE]),
-                NoiseConfig::ValueCubic { octaves, gain, lacunarity, .. } => ValueCubic
+                NoiseConfig::ValueCubic {
+                    octaves,
+                    gain,
+                    lacunarity,
+                    ..
+                } => ValueCubic
                     .fbm(*octaves, *gain, *lacunarity)
                     .seed(resolved_seed)
                     .sample2([x * SCALE, y * SCALE]),
-                NoiseConfig::Simplex { octaves, gain, lacunarity, .. } => Simplex
+                NoiseConfig::Simplex {
+                    octaves,
+                    gain,
+                    lacunarity,
+                    ..
+                } => Simplex
                     .fbm(*octaves, *gain, *lacunarity)
                     .seed(resolved_seed)
                     .sample2([x * SCALE, y * SCALE]),
@@ -139,7 +160,10 @@ pub fn fill_with_noise(config: NoiseConfig) -> Vec<u8> {
         })
         .collect();
 
-    raw = raw.iter().map(|&n| ((n + 1.0) * 0.5 * 6.0).fract()).collect();
+    raw = raw
+        .iter()
+        .map(|&n| ((n + 1.0) * 0.5 * 6.0).fract())
+        .collect();
 
     let min = raw.iter().cloned().fold(f32::INFINITY, f32::min);
     let max = raw.iter().cloned().fold(f32::NEG_INFINITY, f32::max);

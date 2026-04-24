@@ -4,8 +4,8 @@ use serde::Deserialize;
 use std::io::Cursor;
 
 use crate::image_processing::generation::{NoiseConfig, HEIGHT, WIDTH};
-use crate::image_processing::{color, generation, util};
 use crate::image_processing::util::BlendType;
+use crate::image_processing::{color, generation, util};
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(tag = "type", rename_all = "snake_case")]

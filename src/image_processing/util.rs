@@ -1,8 +1,8 @@
 use image::{GrayImage, Luma};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use rand::prelude::SmallRng;
 use rand::{Rng, SeedableRng};
 use serde::Deserialize;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
@@ -13,7 +13,12 @@ pub enum BlendType {
     Gradient,
 }
 
-pub fn blend_noises(layers: &[(&[u8], f32)], btype: BlendType, width: usize, height: usize) -> Vec<u8> {
+pub fn blend_noises(
+    layers: &[(&[u8], f32)],
+    btype: BlendType,
+    width: usize,
+    height: usize,
+) -> Vec<u8> {
     let len = width * height;
     let mut combined = vec![0u8; len];
 
@@ -24,9 +29,7 @@ pub fn blend_noises(layers: &[(&[u8], f32)], btype: BlendType, width: usize, hei
             let result = match btype {
                 BlendType::Linear => {
                     let total_w: f32 = layers.iter().map(|(_, w)| w).sum();
-                    let val: f32 = layers.iter()
-                        .map(|(data, w)| data[i] as f32 * w)
-                        .sum();
+                    let val: f32 = layers.iter().map(|(data, w)| data[i] as f32 * w).sum();
                     val / total_w
                 }
 
