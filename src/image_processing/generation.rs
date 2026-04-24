@@ -3,7 +3,7 @@ use noise_functions::{
     CellDistanceSq, Noise, OpenSimplex2s, OpenSimplexNoise, Perlin, Simplex, ValueCubic,
 };
 use rayon::prelude::*;
-pub(crate) use crate::image_processing::values::{NoiseConfig, HEIGHT, WIDTH};
+use crate::image_processing::values::{NoiseConfig, HEIGHT, WIDTH};
 
 const SCALE: f32 = 0.001;
 const CURL_MULTIPLIERS: [f32; 3] = [500.0, 300.0, 200.0];
@@ -130,17 +130,17 @@ pub fn fill_with_noise(config: NoiseConfig) -> Vec<u8> {
         .collect();
 
     raw = raw
-        .iter()
+        .par_iter()
         .map(|&n| ((n + 1.0) * 0.5 * 6.0).fract())
         .collect();
 
-    let min = raw.iter().cloned().fold(f32::INFINITY, f32::min);
-    let max = raw.iter().cloned().fold(f32::NEG_INFINITY, f32::max);
+    let min = raw.par_iter().cloned().reduce(|| f32::INFINITY, |a, b| a.min(b));
+    let max = raw.par_iter().cloned().reduce(|| f32::NEG_INFINITY, |a, b| a.max(b));
     let range = max - min;
 
-    raw.iter()
-        .map(|v| (((v - min) / range) * 255.0).clamp(0.0, 255.0) as u8)
-        .collect()
+    raw.par_iter()
+    .map(|&v| (((v - min) / range) * 255.0).clamp(0.0, 255.0) as u8)
+    .collect()
 }
 
 pub fn curl_perlin_cached<N>(noise: &N, x: f32, y: f32, epsilon: f32, vscale: f32) -> (f32, f32)
