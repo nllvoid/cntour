@@ -1,4 +1,3 @@
-use std::i32::{MAX, MIN};
 use std::io::Cursor;
 use image::{GrayImage, ImageFormat, Luma};
 use rand::prelude::SmallRng;
@@ -30,7 +29,7 @@ pub fn get_current_time() -> Duration {
 pub fn get_random_seed(seed: i32) -> i32 {
     if seed == -1 {
         SmallRng::seed_from_u64(get_current_time().as_millis() as u64)
-            .random_range(MIN..MAX)
+            .random_range(i32::MIN..i32::MAX)
     } else {
         seed
     }
