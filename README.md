@@ -78,7 +78,8 @@ curl -X POST "$BASE_URL/image/generate/blended" \
         "weight": 60.0
       }
     ],
-    "colored": true
+    "colored": true,
+    "blend_type": "GRADIENT"
   }' \
   --output blended.png
 ```

@@ -3,8 +3,9 @@ use image::ImageFormat;
 use serde::Deserialize;
 use std::io::Cursor;
 
-use crate::image_processing::generation::NoiseConfig;
+use crate::image_processing::generation::{NoiseConfig, HEIGHT, WIDTH};
 use crate::image_processing::{color, generation, util};
+use crate::image_processing::util::BlendType;
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(tag = "type", rename_all = "snake_case")]
@@ -99,6 +100,7 @@ pub struct BlendLayer {
 pub struct BlendedRequest {
     pub layers: Vec<BlendLayer>,
     pub colored: Option<bool>,
+    pub blend_type: BlendType,
 }
 
 fn encode_png(img: image::DynamicImage) -> Vec<u8> {
@@ -161,7 +163,7 @@ pub async fn generate_blended(body: web::Json<BlendedRequest>) -> HttpResponse {
         .map(|(v, &w)| (v.as_slice(), w))
         .collect();
 
-    let grayscale = util::blend_noises(&pairs);
+    let grayscale = util::blend_noises(&pairs, body.blend_type, WIDTH.into(), HEIGHT.into());
     let colored = body.colored.unwrap_or(false);
     let png = render(&grayscale, colored);
 

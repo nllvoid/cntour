@@ -2,24 +2,62 @@ use image::{GrayImage, Luma};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use rand::prelude::SmallRng;
 use rand::{Rng, SeedableRng};
+use serde::Deserialize;
 
-pub fn blend_noises(layers: &[(&[u8], f32)]) -> Vec<u8> {
-    assert!(!layers.is_empty(), "Need at least one layer");
+#[derive(Deserialize, Clone, Debug)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum BlendType {
+    #[serde(rename = "linear")]
+    Linear,
+    #[serde(rename = "gradient")]
+    Gradient,
+}
 
-    let len = layers[0].0.len();
-    assert!(
-        layers.iter().all(|(v, _)| v.len() == len),
-        "All layers must be same length"
-    );
+pub fn blend_noises(layers: &[(&[u8], f32)], btype: BlendType, width: usize, height: usize) -> Vec<u8> {
+    let len = width * height;
+    let mut combined = vec![0u8; len];
 
-    let total_weight: f32 = layers.iter().map(|(_, w)| w).sum();
+    for y in 0..height {
+        for x in 0..width {
+            let i = y * width + x;
 
-    (0..len)
-        .map(|i| {
-            let val: f32 = layers.iter().map(|(v, w)| v[i] as f32 * w).sum::<f32>() / total_weight;
-            val.clamp(0.0, 255.0) as u8
-        })
-        .collect()
+            let result = match btype {
+                BlendType::Linear => {
+                    let total_w: f32 = layers.iter().map(|(_, w)| w).sum();
+                    let val: f32 = layers.iter()
+                        .map(|(data, w)| data[i] as f32 * w)
+                        .sum();
+                    val / total_w
+                }
+
+                BlendType::Gradient => {
+                    let mut total_w = 0.0f32;
+                    let mut val = 0.0f32;
+
+                    for (data, user_w) in layers {
+                        let x1 = data[y * width + (x + 1).min(width - 1)] as f32;
+                        let x0 = data[y * width + x.saturating_sub(1)] as f32;
+                        let y1 = data[(y + 1).min(height - 1) * width + x] as f32;
+                        let y0 = data[y.saturating_sub(1) * width + x] as f32;
+
+                        let dx = (x1 - x0) / 2.0;
+                        let dy = (y1 - y0) / 2.0;
+                        let grad = (dx * dx + dy * dy).sqrt();
+
+                        let w = user_w * (grad + 0.0001);
+                        total_w += w;
+                        val += data[i] as f32 * w;
+                    }
+
+                    val / total_w
+                }
+            };
+
+            combined[i] = result.clamp(0.0, 255.0) as u8;
+        }
+    }
+
+    combined
 }
 
 pub fn grayscale_array_to_image(data: &[u8], width: u32, height: u32) -> GrayImage {
