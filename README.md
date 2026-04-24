@@ -79,7 +79,7 @@ curl -X POST "$BASE_URL/image/generate/blended" \
       }
     ],
     "colored": true,
-    "blend_type": "GRADIENT"
+    "blend_type": "linear"
   }' \
   --output blended.png
 ```
