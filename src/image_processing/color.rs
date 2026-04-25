@@ -2,6 +2,7 @@ use crate::image_processing::util::get_current_time;
 use image::{Rgb, RgbImage};
 use rand::prelude::*;
 
+// Generates random vibrant palette
 pub fn generate_random_palette(count: u8) -> Vec<[u8; 3]> {
     let mut rng = SmallRng::seed_from_u64(get_current_time().as_millis() as u64);
 
@@ -35,6 +36,7 @@ pub fn generate_random_palette(count: u8) -> Vec<[u8; 3]> {
         .collect()
 }
 
+// Sorting palette by colors HSV value
 pub fn sort_palette_by_value(mut palette: Vec<[u8; 3]>) -> Vec<[u8; 3]> {
     let slice = palette.as_mut_slice();
     slice.sort_unstable_by(|a, b| {
@@ -60,10 +62,16 @@ pub fn sort_palette_by_value(mut palette: Vec<[u8; 3]>) -> Vec<[u8; 3]> {
     palette
 }
 
-pub fn grayscale_to_rgb_image(data: &[u8], width: u32, height: u32) -> RgbImage {
+// Fills grayscale noise with colors.
+// Returns image
+pub fn grayscale_to_rgb_image(
+    data: &[u8],
+    width: u32,
+    height: u32,
+    mut palette: Vec<[u8; 3]>,
+) -> RgbImage {
     let mut img = RgbImage::new(width, height);
-    let palette = sort_palette_by_value(generate_random_palette(4));
-
+    palette = sort_palette_by_value(palette);
     let stops = palette.len() - 1;
     for (i, &val) in data.iter().enumerate() {
         let t = val as f32 / 255.0 * stops as f32;

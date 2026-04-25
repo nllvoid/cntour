@@ -1,27 +1,10 @@
-use image::{GrayImage, Luma};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use image::{GrayImage, ImageFormat, Luma};
 use rand::prelude::SmallRng;
 use rand::{Rng, SeedableRng};
+use std::io::Cursor;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-pub fn blend_noises(layers: &[(&[u8], f32)]) -> Vec<u8> {
-    assert!(!layers.is_empty(), "Need at least one layer");
-
-    let len = layers[0].0.len();
-    assert!(
-        layers.iter().all(|(v, _)| v.len() == len),
-        "All layers must be same length"
-    );
-
-    let total_weight: f32 = layers.iter().map(|(_, w)| w).sum();
-
-    (0..len)
-        .map(|i| {
-            let val: f32 = layers.iter().map(|(v, w)| v[i] as f32 * w).sum::<f32>() / total_weight;
-            val.clamp(0.0, 255.0) as u8
-        })
-        .collect()
-}
-
+// Returns grayscale data as image
 pub fn grayscale_array_to_image(data: &[u8], width: u32, height: u32) -> GrayImage {
     assert_eq!(
         data.len(),
@@ -44,11 +27,18 @@ pub fn get_current_time() -> Duration {
         .expect("Time should go forward")
 }
 
+// Returns random seed value if seed = -1
 pub fn get_random_seed(seed: i32) -> i32 {
     if seed == -1 {
         SmallRng::seed_from_u64(get_current_time().as_millis() as u64)
-            .random_range(-2147483648..2147483647)
+            .random_range(i32::MIN..i32::MAX)
     } else {
         seed
     }
+}
+
+pub fn encode_png(img: image::DynamicImage) -> Vec<u8> {
+    let mut buf = Cursor::new(Vec::new());
+    img.write_to(&mut buf, ImageFormat::Png).unwrap();
+    buf.into_inner()
 }

@@ -53,7 +53,7 @@ curl -X POST "$BASE_URL/image/generate/single" \
       "sharp": true,
       "curl": false
     },
-    "colored": true
+    "colored": "random"
   }' \
   --output single.png
 ```
@@ -78,7 +78,8 @@ curl -X POST "$BASE_URL/image/generate/blended" \
         "weight": 60.0
       }
     ],
-    "colored": true
+    "colored": "random",
+    "blend_type": "linear"
   }' \
   --output blended.png
 ```
@@ -166,3 +167,27 @@ Worley / cellular noise based on distance to the nearest cell point. Low jitter 
 ```json
 { "type": "cell_distance", "jitter": 0.35 }
 ```
+## Palettes
+
+The `colored` field accepts a palette name or `"random"` to generate new random one.
+
+| Palette |
+|---------|
+| `aurora` |
+| `glacier` |
+| `neon` |
+| `ocean` |
+| `psychedelic` |
+| `sunset` |
+| `viridis` |
+| `random` |
+
+## Blend Types
+
+The `blend_type` field controls how layers are combined.
+
+| Blend Type | Description |
+|------------|-------------|
+| `linear` | Weighted average |
+| `gradient` | Weighted by local edge strength |
+| `screen` | Brightening blend, never darkens |
