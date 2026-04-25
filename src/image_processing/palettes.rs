@@ -68,6 +68,7 @@ pub fn palette_viridis() -> Vec<[u8; 3]> {
     ]
 }
 
+// Returns palette by name
 pub fn get_palette(name: &str) -> Vec<[u8; 3]> {
     let palettes = [
         "aurora",

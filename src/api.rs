@@ -7,6 +7,8 @@ use crate::image_processing::util::encode_png;
 use crate::image_processing::values::{BlendedRequest, SingleRequest, HEIGHT, WIDTH};
 use crate::image_processing::{color, generation, util};
 
+// Renders grayscale as image,
+// if colored is random or any of palettes names returns colored image
 fn render(grayscale: &[u8], colored: String) -> Vec<u8> {
     if colored != "grayscale".to_string() {
         let palette: Option<Vec<[u8; 3]>> = match colored.as_str() {
@@ -26,6 +28,7 @@ fn render(grayscale: &[u8], colored: String) -> Vec<u8> {
     }
 }
 
+// Generates single noise image
 pub async fn generate_single(body: web::Json<SingleRequest>) -> HttpResponse {
     let body = body.into_inner();
     log::info!("POST /image/generate/single");
@@ -40,6 +43,7 @@ pub async fn generate_single(body: web::Json<SingleRequest>) -> HttpResponse {
     HttpResponse::Ok().content_type("image/png").body(png)
 }
 
+// Generates blended noise image
 pub async fn generate_blended(body: web::Json<BlendedRequest>) -> HttpResponse {
     let body = body.into_inner();
     log::info!("→ POST /image/generate/blended");

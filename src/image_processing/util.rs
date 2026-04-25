@@ -4,6 +4,7 @@ use rand::{Rng, SeedableRng};
 use std::io::Cursor;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+// Returns grayscale data as image
 pub fn grayscale_array_to_image(data: &[u8], width: u32, height: u32) -> GrayImage {
     assert_eq!(
         data.len(),
@@ -26,6 +27,7 @@ pub fn get_current_time() -> Duration {
         .expect("Time should go forward")
 }
 
+// Returns random seed value if seed = -1
 pub fn get_random_seed(seed: i32) -> i32 {
     if seed == -1 {
         SmallRng::seed_from_u64(get_current_time().as_millis() as u64)

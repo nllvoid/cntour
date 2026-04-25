@@ -53,7 +53,7 @@ curl -X POST "$BASE_URL/image/generate/single" \
       "sharp": true,
       "curl": false
     },
-    "colored": true
+    "colored": "random"
   }' \
   --output single.png
 ```
@@ -167,3 +167,17 @@ Worley / cellular noise based on distance to the nearest cell point. Low jitter 
 ```json
 { "type": "cell_distance", "jitter": 0.35 }
 ```
+## Palettes
+
+The `colored` field accepts a palette name or `"random"` to generate new random one.
+
+| Palette |
+|---------|
+| `aurora` |
+| `glacier` |
+| `neon` |
+| `ocean` |
+| `psychedelic` |
+| `sunset` |
+| `viridis` |
+| `random` |

@@ -9,6 +9,7 @@ use rayon::prelude::*;
 const SCALE: f32 = 0.001;
 const CURL_MULTIPLIERS: [f32; 3] = [500.0, 300.0, 200.0];
 
+// Fills array with noise based on config
 pub fn fill_with_noise(config: NoiseConfig) -> Vec<u8> {
     let resolved_seed = match &config {
         NoiseConfig::Perlin { seed, .. }
@@ -92,7 +93,7 @@ pub fn fill_with_noise(config: NoiseConfig) -> Vec<u8> {
         .map(|&v| (((v - min) / range) * 255.0).clamp(0.0, 255.0) as u8)
         .collect()
 }
-
+// Makes cached curl perlin noise
 fn curl_perlin_cached<N>(noise: &N, x: f32, y: f32, epsilon: f32, vscale: f32) -> (f32, f32)
 where
     N: noise_functions::Sample<2> + Sync,
@@ -103,7 +104,7 @@ where
         - noise.sample2([x * vscale - epsilon, y * vscale]));
     (vx, vy)
 }
-
+// Makes multiple perlins without sharp option
 fn multiple_perlins_without_sharp(perlins: Vec<&Seeded<Fbm<Perlin>>>, x: f32, y: f32) -> f32 {
     let (vx1, vy1) = curl_perlin_cached(perlins[0], x, y, 1.0, SCALE);
     let (vx2, vy2) = curl_perlin_cached(
@@ -126,6 +127,7 @@ fn multiple_perlins_without_sharp(perlins: Vec<&Seeded<Fbm<Perlin>>>, x: f32, y:
         (y + vy3 * CURL_MULTIPLIERS[2]) * SCALE,
     ])
 }
+// Makes multiple perlins with sharp option
 fn multiple_perlins_with_sharp(perlins: Vec<&Seeded<Fbm<Perlin>>>, x: f32, y: f32) -> f32 {
     let (vx1, vy1) = curl_perlin_cached(perlins[0], x, y, 1.0, SCALE);
     let (vx2, vy2) = curl_perlin_cached(
@@ -149,7 +151,7 @@ fn multiple_perlins_with_sharp(perlins: Vec<&Seeded<Fbm<Perlin>>>, x: f32, y: f3
     ]) * 4.0)
         .fract()
 }
-
+// Makes perlin samplers for faster generating
 fn get_perlin_samplers(
     config: NoiseConfig,
     resolved_seed: i32,
