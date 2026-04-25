@@ -181,3 +181,13 @@ The `colored` field accepts a palette name or `"random"` to generate new random 
 | `sunset` |
 | `viridis` |
 | `random` |
+
+## Blend Types
+
+The `blend_type` field controls how layers are combined.
+
+| Blend Type | Description |
+|------------|-------------|
+| `linear` | Weighted average |
+| `gradient` | Weighted by local edge strength |
+| `screen` | Brightening blend, never darkens |
