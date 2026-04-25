@@ -69,22 +69,26 @@ pub fn palette_viridis() -> Vec<[u8; 3]> {
 }
 
 pub fn get_palette(name: &str) -> Vec<[u8; 3]> {
-    let palettes = ["aurora", "glacier", "neon", "ocean", "psychedelic", "sunset", "viridis"];
+    let palettes = [
+        "aurora",
+        "glacier",
+        "neon",
+        "ocean",
+        "psychedelic",
+        "sunset",
+        "viridis",
+    ];
 
-    assert_eq!(
-        palettes.contains(&name),
-        true,
-        "Palette name not listed"
-    );
+    assert_eq!(palettes.contains(&name), true, "Palette name not listed");
 
     match name {
-        "aurora"  => palette_aurora(),
+        "aurora" => palette_aurora(),
         "glacier" => palette_glacier(),
-        "neon"    => palette_neon(),
-        "ocean"   => palette_ocean(),
+        "neon" => palette_neon(),
+        "ocean" => palette_ocean(),
         "psychedelic" => palette_psychedelic(),
         "sunset" => palette_sunset(),
         "viridis" => palette_viridis(),
-        _         => palette_aurora(),
+        _ => palette_aurora(),
     }
 }

@@ -7,6 +7,8 @@ pub enum BlendType {
     Linear,
     #[serde(rename = "gradient")]
     Gradient,
+    #[serde(rename = "screen")]
+    Screen,
 }
 
 #[derive(Deserialize, Clone, Debug)]

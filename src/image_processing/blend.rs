@@ -1,12 +1,20 @@
 use crate::image_processing::values::BlendType;
 
+// F(a, b...) = a + b... / n
 fn linear(layers: &[(&[u8], f32)], i: usize) -> f32 {
-    let total_w: f32 = layers.iter().map(|(_, w)| w).sum();
-    let val: f32 = layers.iter().map(|(data, w)| data[i] as f32 * w).sum();
-    val / total_w
+    layers.iter().map(|(data, w)| data[i] as f32 * w).sum::<f32>() /
+        layers.iter().map(|(_, w)| w).sum::<f32>()
 }
 
-fn gradient(layers: &[(&[u8], f32)], i: usize, x: usize, y: usize, width: usize, height: usize) -> f32 {
+// F(a,b...) = sum(a * w * grad(a)) / sum(w * grad(a))
+fn gradient(
+    layers: &[(&[u8], f32)],
+    i: usize,
+    x: usize,
+    y: usize,
+    width: usize,
+    height: usize,
+) -> f32 {
     let mut total_w: f32 = 0.0;
     let mut val: f32 = 0.0;
 
@@ -28,6 +36,12 @@ fn gradient(layers: &[(&[u8], f32)], i: usize, x: usize, y: usize, width: usize,
     val / total_w
 }
 
+// F(a,b...) = 1 - (1 - a)(1 - b)...
+fn screen(layers: &[(&[u8], f32)], i: usize) -> f32 {
+    let val: f32 = layers.iter().map(|(data, w)| 1.0 - (1.0 - data[i] as f32) * (1.0 - w)).product();
+    val.min(255.0f32)
+}
+
 pub fn blend_noises(
     layers: &[(&[u8], f32)],
     blend_type: BlendType,
@@ -44,6 +58,7 @@ pub fn blend_noises(
             let result = match blend_type {
                 BlendType::Linear => linear(layers, i),
                 BlendType::Gradient => gradient(layers, i, x, y, width, height),
+                BlendType::Screen => screen(layers, i)
             };
 
             combined[i] = result.clamp(0.0, 255.0) as u8;

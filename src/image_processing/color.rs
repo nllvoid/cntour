@@ -60,7 +60,12 @@ pub fn sort_palette_by_value(mut palette: Vec<[u8; 3]>) -> Vec<[u8; 3]> {
     palette
 }
 
-pub fn grayscale_to_rgb_image(data: &[u8], width: u32, height: u32, mut palette: Vec<[u8; 3]>) -> RgbImage {
+pub fn grayscale_to_rgb_image(
+    data: &[u8],
+    width: u32,
+    height: u32,
+    mut palette: Vec<[u8; 3]>,
+) -> RgbImage {
     let mut img = RgbImage::new(width, height);
     palette = sort_palette_by_value(palette);
     let stops = palette.len() - 1;

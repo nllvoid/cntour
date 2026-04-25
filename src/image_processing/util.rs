@@ -1,7 +1,7 @@
-use std::io::Cursor;
 use image::{GrayImage, ImageFormat, Luma};
 use rand::prelude::SmallRng;
 use rand::{Rng, SeedableRng};
+use std::io::Cursor;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 pub fn grayscale_array_to_image(data: &[u8], width: u32, height: u32) -> GrayImage {
@@ -10,7 +10,7 @@ pub fn grayscale_array_to_image(data: &[u8], width: u32, height: u32) -> GrayIma
         (width as usize) * (height as usize),
         "Grayscale data length must equal width * height"
     );
-    
+
     let mut img = GrayImage::new(width, height);
     for (i, &val) in data.iter().enumerate() {
         let x = (i as u32) % width;

@@ -1,19 +1,24 @@
 use actix_web::{web, HttpResponse};
 
-use crate::image_processing::values::{BlendedRequest, SingleRequest, HEIGHT, WIDTH};
-use crate::image_processing::{color, generation, util};
-use crate::image_processing::util::encode_png;
 use crate::image_processing::blend::blend_noises;
 use crate::image_processing::color::generate_random_palette;
 use crate::image_processing::palettes::get_palette;
+use crate::image_processing::util::encode_png;
+use crate::image_processing::values::{BlendedRequest, SingleRequest, HEIGHT, WIDTH};
+use crate::image_processing::{color, generation, util};
 
 fn render(grayscale: &[u8], colored: String) -> Vec<u8> {
     if colored != "grayscale".to_string() {
         let palette: Option<Vec<[u8; 3]>> = match colored.as_str() {
-            "random"                   => generate_random_palette(6).into(),
-            colored                 => Some(get_palette(&colored)),
+            "random" => generate_random_palette(6).into(),
+            colored => Some(get_palette(&colored)),
         };
-        let img = color::grayscale_to_rgb_image(grayscale, WIDTH as u32, HEIGHT as u32, palette.expect("!"));
+        let img = color::grayscale_to_rgb_image(
+            grayscale,
+            WIDTH as u32,
+            HEIGHT as u32,
+            palette.expect("!"),
+        );
         encode_png(image::DynamicImage::ImageRgb8(img))
     } else {
         let img = util::grayscale_array_to_image(grayscale, WIDTH as u32, HEIGHT as u32);

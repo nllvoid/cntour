@@ -1,9 +1,10 @@
 use crate::image_processing::util::get_random_seed;
+use crate::image_processing::values::{NoiseConfig, HEIGHT, WIDTH};
+use noise_functions::modifiers::{Fbm, Seeded};
 use noise_functions::{
     CellDistanceSq, Noise, OpenSimplex2s, OpenSimplexNoise, Perlin, Simplex, ValueCubic,
 };
 use rayon::prelude::*;
-use crate::image_processing::values::{NoiseConfig, HEIGHT, WIDTH};
 
 const SCALE: f32 = 0.001;
 const CURL_MULTIPLIERS: [f32; 3] = [500.0, 300.0, 200.0];
@@ -17,25 +18,7 @@ pub fn fill_with_noise(config: NoiseConfig) -> Vec<u8> {
         NoiseConfig::CellDistance { .. } => 0,
     };
 
-    let perlin_samplers = if let NoiseConfig::Perlin {
-        octaves,
-        gain,
-        lacunarity,
-        ..
-    } = &config
-    {
-        Some((
-            Perlin.fbm(*octaves, *gain, *lacunarity).seed(resolved_seed),
-            Perlin
-                .fbm(*octaves, *gain, *lacunarity)
-                .seed(resolved_seed + 1),
-            Perlin
-                .fbm(*octaves, *gain, *lacunarity)
-                .seed(resolved_seed + 2),
-        ))
-    } else {
-        None
-    };
+    let perlin_samplers = get_perlin_samplers(config.clone(), resolved_seed);
 
     let mut raw: Vec<f32> = (0..HEIGHT as usize * WIDTH as usize)
         .into_par_iter()
@@ -51,48 +34,9 @@ pub fn fill_with_noise(config: NoiseConfig) -> Vec<u8> {
                     if *sharp && !*curl {
                         (sample * 4.0).fract()
                     } else if !*sharp && *curl {
-                        let (vx1, vy1) = curl_perlin_cached(p0, x, y, 1.0, SCALE);
-                        let (vx2, vy2) = curl_perlin_cached(
-                            p1,
-                            x + vx1 * CURL_MULTIPLIERS[0],
-                            y + vy1 * CURL_MULTIPLIERS[0],
-                            1.0,
-                            SCALE * 3.0,
-                        );
-                        let (vx3, vy3) = curl_perlin_cached(
-                            p2,
-                            x + vx2 * CURL_MULTIPLIERS[1],
-                            y + vy2 * CURL_MULTIPLIERS[1],
-                            1.0,
-                            SCALE * 8.0,
-                        );
-
-                        p0.sample2([
-                            (x + vx3 * CURL_MULTIPLIERS[2]) * SCALE,
-                            (y + vy3 * CURL_MULTIPLIERS[2]) * SCALE,
-                        ])
+                        multiple_perlins_without_sharp(vec![p0, p1, p2], x, y)
                     } else if *sharp && *curl {
-                        let (vx1, vy1) = curl_perlin_cached(p0, x, y, 1.0, SCALE);
-                        let (vx2, vy2) = curl_perlin_cached(
-                            p1,
-                            x + vx1 * CURL_MULTIPLIERS[0],
-                            y + vy1 * CURL_MULTIPLIERS[0],
-                            1.0,
-                            SCALE * 3.0,
-                        );
-                        let (vx3, vy3) = curl_perlin_cached(
-                            p2,
-                            x + vx2 * CURL_MULTIPLIERS[1],
-                            y + vy2 * CURL_MULTIPLIERS[1],
-                            1.0,
-                            SCALE * 8.0,
-                        );
-
-                        (p0.sample2([
-                            (x + vx3 * CURL_MULTIPLIERS[2]) * SCALE,
-                            (y + vy3 * CURL_MULTIPLIERS[2]) * SCALE,
-                        ]) * 4.0)
-                            .fract()
+                        multiple_perlins_with_sharp(vec![p0, p1, p2], x, y)
                     } else {
                         sample
                     }
@@ -134,16 +78,22 @@ pub fn fill_with_noise(config: NoiseConfig) -> Vec<u8> {
         .map(|&n| ((n + 1.0) * 0.5 * 6.0).fract())
         .collect();
 
-    let min = raw.par_iter().cloned().reduce(|| f32::INFINITY, |a, b| a.min(b));
-    let max = raw.par_iter().cloned().reduce(|| f32::NEG_INFINITY, |a, b| a.max(b));
+    let min = raw
+        .par_iter()
+        .cloned()
+        .reduce(|| f32::INFINITY, |a, b| a.min(b));
+    let max = raw
+        .par_iter()
+        .cloned()
+        .reduce(|| f32::NEG_INFINITY, |a, b| a.max(b));
     let range = max - min;
 
     raw.par_iter()
-    .map(|&v| (((v - min) / range) * 255.0).clamp(0.0, 255.0) as u8)
-    .collect()
+        .map(|&v| (((v - min) / range) * 255.0).clamp(0.0, 255.0) as u8)
+        .collect()
 }
 
-pub fn curl_perlin_cached<N>(noise: &N, x: f32, y: f32, epsilon: f32, vscale: f32) -> (f32, f32)
+fn curl_perlin_cached<N>(noise: &N, x: f32, y: f32, epsilon: f32, vscale: f32) -> (f32, f32)
 where
     N: noise_functions::Sample<2> + Sync,
 {
@@ -152,4 +102,80 @@ where
     let vy = -(noise.sample2([x * vscale + epsilon, y * vscale])
         - noise.sample2([x * vscale - epsilon, y * vscale]));
     (vx, vy)
+}
+
+fn multiple_perlins_without_sharp(perlins: Vec<&Seeded<Fbm<Perlin>>>, x: f32, y: f32) -> f32 {
+    let (vx1, vy1) = curl_perlin_cached(perlins[0], x, y, 1.0, SCALE);
+    let (vx2, vy2) = curl_perlin_cached(
+        perlins[1],
+        x + vx1 * CURL_MULTIPLIERS[0],
+        y + vy1 * CURL_MULTIPLIERS[0],
+        1.0,
+        SCALE * 3.0,
+    );
+    let (vx3, vy3) = curl_perlin_cached(
+        perlins[2],
+        x + vx2 * CURL_MULTIPLIERS[1],
+        y + vy2 * CURL_MULTIPLIERS[1],
+        1.0,
+        SCALE * 8.0,
+    );
+
+    perlins[1].sample2([
+        (x + vx3 * CURL_MULTIPLIERS[2]) * SCALE,
+        (y + vy3 * CURL_MULTIPLIERS[2]) * SCALE,
+    ])
+}
+fn multiple_perlins_with_sharp(perlins: Vec<&Seeded<Fbm<Perlin>>>, x: f32, y: f32) -> f32 {
+    let (vx1, vy1) = curl_perlin_cached(perlins[0], x, y, 1.0, SCALE);
+    let (vx2, vy2) = curl_perlin_cached(
+        perlins[1],
+        x + vx1 * CURL_MULTIPLIERS[0],
+        y + vy1 * CURL_MULTIPLIERS[0],
+        1.0,
+        SCALE * 3.0,
+    );
+    let (vx3, vy3) = curl_perlin_cached(
+        perlins[2],
+        x + vx2 * CURL_MULTIPLIERS[1],
+        y + vy2 * CURL_MULTIPLIERS[1],
+        1.0,
+        SCALE * 8.0,
+    );
+
+    (perlins[0].sample2([
+        (x + vx3 * CURL_MULTIPLIERS[2]) * SCALE,
+        (y + vy3 * CURL_MULTIPLIERS[2]) * SCALE,
+    ]) * 4.0)
+        .fract()
+}
+
+fn get_perlin_samplers(
+    config: NoiseConfig,
+    resolved_seed: i32,
+) -> Option<(
+    Seeded<Fbm<Perlin>>,
+    Seeded<Fbm<Perlin>>,
+    Seeded<Fbm<Perlin>>,
+)> {
+    let perlin_samplers = if let NoiseConfig::Perlin {
+        octaves,
+        gain,
+        lacunarity,
+        ..
+    } = &config
+    {
+        Some((
+            Perlin.fbm(*octaves, *gain, *lacunarity).seed(resolved_seed),
+            Perlin
+                .fbm(*octaves, *gain, *lacunarity)
+                .seed(resolved_seed + 1),
+            Perlin
+                .fbm(*octaves, *gain, *lacunarity)
+                .seed(resolved_seed + 2),
+        ))
+    } else {
+        None
+    };
+    perlin_samplers
 }
