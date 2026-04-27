@@ -1,10 +1,11 @@
 use crate::image_processing::util::get_random_seed;
-use crate::image_processing::values::{NoiseConfig, HEIGHT, WIDTH};
+use crate::image_processing::values::{HEIGHT, WIDTH};
 use noise_functions::modifiers::{Fbm, Seeded};
 use noise_functions::{
     CellDistanceSq, Noise, OpenSimplex2s, OpenSimplexNoise, Perlin, Simplex, ValueCubic,
 };
 use rayon::prelude::*;
+use crate::image_processing::noise::NoiseConfig;
 
 const SCALE: f32 = 0.001;
 const CURL_MULTIPLIERS: [f32; 3] = [500.0, 300.0, 200.0];
@@ -21,7 +22,7 @@ pub fn fill_with_noise(config: NoiseConfig) -> Vec<u8> {
 
     let perlin_samplers = get_perlin_samplers(config.clone(), resolved_seed);
 
-    let mut raw: Vec<f32> = (0..HEIGHT as usize * WIDTH as usize)
+    let raw: Vec<f32> = (0..HEIGHT as usize * WIDTH as usize)
         .into_par_iter()
         .map(|i| {
             let x = (i % WIDTH as usize) as f32;
@@ -74,25 +75,9 @@ pub fn fill_with_noise(config: NoiseConfig) -> Vec<u8> {
         })
         .collect();
 
-    raw = raw
-        .par_iter()
-        .map(|&n| ((n + 1.0) * 0.5 * 6.0).fract())
-        .collect();
-
-    let min = raw
-        .par_iter()
-        .cloned()
-        .reduce(|| f32::INFINITY, |a, b| a.min(b));
-    let max = raw
-        .par_iter()
-        .cloned()
-        .reduce(|| f32::NEG_INFINITY, |a, b| a.max(b));
-    let range = max - min;
-
-    raw.par_iter()
-        .map(|&v| (((v - min) / range) * 255.0).clamp(0.0, 255.0) as u8)
-        .collect()
+    raw_to_grayscale(raw)
 }
+
 // Makes cached curl perlin noise
 fn curl_perlin_cached<N>(noise: &N, x: f32, y: f32, epsilon: f32, vscale: f32) -> (f32, f32)
 where
@@ -104,6 +89,7 @@ where
         - noise.sample2([x * vscale - epsilon, y * vscale]));
     (vx, vy)
 }
+
 // Makes multiple perlins without sharp option
 fn multiple_perlins_without_sharp(perlins: Vec<&Seeded<Fbm<Perlin>>>, x: f32, y: f32) -> f32 {
     let (vx1, vy1) = curl_perlin_cached(perlins[0], x, y, 1.0, SCALE);
@@ -127,6 +113,7 @@ fn multiple_perlins_without_sharp(perlins: Vec<&Seeded<Fbm<Perlin>>>, x: f32, y:
         (y + vy3 * CURL_MULTIPLIERS[2]) * SCALE,
     ])
 }
+
 // Makes multiple perlins with sharp option
 fn multiple_perlins_with_sharp(perlins: Vec<&Seeded<Fbm<Perlin>>>, x: f32, y: f32) -> f32 {
     let (vx1, vy1) = curl_perlin_cached(perlins[0], x, y, 1.0, SCALE);
@@ -151,6 +138,7 @@ fn multiple_perlins_with_sharp(perlins: Vec<&Seeded<Fbm<Perlin>>>, x: f32, y: f3
     ]) * 4.0)
         .fract()
 }
+
 // Makes perlin samplers for faster generating
 fn get_perlin_samplers(
     config: NoiseConfig,
@@ -180,4 +168,26 @@ fn get_perlin_samplers(
         None
     };
     perlin_samplers
+}
+
+// Converts raw vector of values [-1.0f; 1.0f] to [0; 255]
+fn raw_to_grayscale(mut raw: Vec<f32>) -> Vec<u8> {
+    raw = raw
+        .par_iter()
+        .map(|&n| ((n + 1.0) * 0.5 * 6.0).fract())
+        .collect();
+
+    let min = raw
+        .par_iter()
+        .cloned()
+        .reduce(|| f32::INFINITY, |a, b| a.min(b));
+    let max = raw
+        .par_iter()
+        .cloned()
+        .reduce(|| f32::NEG_INFINITY, |a, b| a.max(b));
+    let range = max - min;
+
+    raw.par_iter()
+        .map(|&v| (((v - min) / range) * 255.0).clamp(0.0, 255.0) as u8)
+        .collect()
 }

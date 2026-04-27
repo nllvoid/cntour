@@ -1,4 +1,5 @@
 use serde::Deserialize;
+use crate::image_processing::noise::NoiseConfig;
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
@@ -11,54 +12,24 @@ pub enum BlendType {
     Screen,
 }
 
+// TODO: Apply function to the noise
 #[derive(Deserialize, Clone, Debug)]
-#[serde(tag = "type", rename_all = "snake_case")]
-pub enum NoiseConfig {
-    Perlin {
-        octaves: u32,
-        gain: f32,
-        lacunarity: f32,
-        seed: i32,
-        sharp: bool,
-        curl: bool,
-    },
-    OpenSimplex {
-        seed: i32,
-    },
-    CellDistance {
-        jitter: f32,
-    },
-    ValueCubic {
-        octaves: u32,
-        gain: f32,
-        lacunarity: f32,
-        seed: i32,
-    },
-    Simplex {
-        octaves: u32,
-        gain: f32,
-        lacunarity: f32,
-        seed: i32,
-    },
-}
-
-#[derive(Deserialize, Debug)]
-pub struct SingleRequest {
-    pub noise: NoiseConfig,
-    pub colored: Option<String>,
+#[serde(rename_all = "snake_case")]
+pub enum FunctionType {
+    #[serde(rename = "logarithm_e")]
+    LogarithmE,
+    #[serde(rename = "sin")]
+    Sin,
+    #[serde(rename = "cos")]
+    Cos,
+    #[serde(rename = "tan")]
+    Tan,
 }
 
 #[derive(Deserialize, Clone, Debug)]
-pub struct BlendLayer {
+pub struct BlendedLayer {
     pub noise: NoiseConfig,
     pub weight: f32,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct BlendedRequest {
-    pub layers: Vec<BlendLayer>,
-    pub colored: Option<String>,
-    pub blend_type: BlendType,
 }
 
 pub(crate) const HEIGHT: u16 = 2500;

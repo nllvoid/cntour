@@ -13,7 +13,7 @@ pub fn generate_random_palette(count: u8) -> Vec<[u8; 3]> {
         .map(|i| {
             let hue = (hue_offset + (i as f32 / count as f32) * 360.0) % 360.0;
             let value: f32 = rng.random_range(0.4..1.0); // spread brightness
-
+            
             let h = hue / 60.0;
             let s = saturation;
             let v = value;
